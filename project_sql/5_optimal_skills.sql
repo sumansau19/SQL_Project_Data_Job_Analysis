@@ -7,47 +7,25 @@ benefits (high salaries), offering strategic insights for career develoment
 in DE role
 */
 
-WITH demand_skills AS(
-    SELECT 
-        s.skill_id,
-        s.skills ,
-        count(sk.job_id) as demand_count
-    From job_postings_fact j
-    Join skills_job_dim sk
-    ON j.job_id= sk.job_id
-    Join skills_dim s
-    ON s.skill_id=sk.skill_id
-    WHERE job_title_short='Data Engineer'
-    AND salary_year_avg IS NOT NULL
-    AND job_work_from_home= TRUE
-    GROUP BY
-     s.skill_id
-),
-average_salary AS
-(
-    SELECT 
-        sk.skill_id,
-   ROUND(avg(salary_year_avg),0) as avg_salary
-FROM 
-    job_postings_fact j
-    INNER JOIN 
-    skills_job_dim sk
-    ON j.job_id=sk.job_id
-    INNER JOIN skills_dim s
-    ON sk.skill_id=s.skill_id
-WHERE job_title_short='Data Engineer'
-AND salary_year_avg IS NOT NULL
-AND job_work_from_home= TRUE
-GROUP BY sk.skill_id
-)
 
-SELECT demand_skills.skill_id,
-    demand_skills.skills,
-    demand_count,
-    avg_salary
-FROM demand_skills
-INNER JOIN average_salary
-ON demand_skills.skill_id=average_salary.skill_id
-ORDER BY demand_count DESC,
-    avg_salary DESC
-LIMIT 25
+SELECT 
+    skills_dim.skill_id,
+    skills_dim.skills,
+    COUNT(skills_job_dim.job_id) AS demand_count,
+    ROUND(AVG(job_postings_fact.salary_year_avg), 0) AS avg_salary
+FROM job_postings_fact
+INNER JOIN skills_job_dim ON job_postings_fact.job_id = skills_job_dim.job_id
+INNER JOIN skills_dim ON skills_job_dim.skill_id = skills_dim.skill_id
+WHERE
+    job_title_short = 'Data Engineer'
+    AND salary_year_avg IS NOT NULL
+    AND job_work_from_home = True 
+GROUP BY
+    skills_dim.skill_id
+HAVING
+    COUNT(skills_job_dim.job_id) > 10
+ORDER BY
+    demand_count DESC,
+    avg_salary  DESC
+LIMIT 25;
+
